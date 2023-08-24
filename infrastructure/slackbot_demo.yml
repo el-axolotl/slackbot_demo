@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A template that stands up a slackbot lambda function.
+Parameters:
+  Env:
+    Type: String
+    Default: dev
+    Description: The name of the environment the lambda function will be deployed to
+  LambdaFuncName:
+    Type: String
+    Default: slackbot-demo-func
+    Description: The name of the lambda function
+  LambdaPolicyName:
+    Type: String
+    Default: slackbot-func-policy
+    Description: The name of the lambda role policy
+  LambdaRoleName:
+    Type: String
+    Default: slackbot-func-role
+    Description: The name of the lambda role
+  Region:
+    Type: String
+    Default: us-west-2
+    Description: The region to deploy the lambda function
+Resources:
+  SlackbotFunction:
+    Type: AWS::Lambda::Function
+    Properties: 
+      Architectures: 
+        - x86_64
+      Code: 
+        ZipFile: |
+          print("Hello world!")
+      FunctionName: !Sub ${Env}-${LambdaFuncName}-${Region}
+      Handler: !Sub ${LambdaFuncName}.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: !GetAtt SlackbotFunctionRole.Arn
+      Runtime: python3.10
+  SlackbotFunctionRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: 
+              Service:
+                lambda.amazonaws.com
+            Action: 
+              - 'sts:AssumeRole'
+      Description: The IAM role that will be used to execute the lambda function
+      ManagedPolicyArns: 
+        - !Ref SlackbotIamRolePolicy
+      RoleName: !Sub ${Env}-${LambdaRoleName}-${Region}
+  SlackbotIamRolePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${Env}-${LambdaPolicyName}-${Region}
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogGroup'
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaFuncName}:*
