@@ -7,4 +7,4 @@ Build a slack bot using Python & its open source libraries. For example, you mig
 Consider adding a CI/CD pipeline that will deploy code updates to your infrastructure of choice. You can use Github actions or any other CI/CD platform.
 
 ## Acceptance Criteria:
-A slackbot that responds to input from a human or some other event. Deployed to AWS using Terraform.
+A slackbot that responds to input from a human or some other event. Deployed to AWS using Cloudformation.
