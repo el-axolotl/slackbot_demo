@@ -1,13 +1,21 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: A template that stands up a slackbot lambda function.
 Parameters:
+  ApiGatewayName:
+    Type: String
+    Default: slackbot-gateway
+    Description: The name of the api gateway
+  ApiGatewayRootMethod:
+    Type: String
+    Default: POST
+    Description: The root method for the api gateway (Example - POST - GET)
   Env:
     Type: String
     Default: dev
-    Description: The name of the environment the lambda function will be deployed to
+    Description: The name of the environment the resources will be deployed to
   LambdaFuncName:
     Type: String
-    Default: slackbot-demo-func
+    Default: slackbot-func
     Description: The name of the lambda function
   LambdaPolicyName:
     Type: String
@@ -22,6 +30,31 @@ Parameters:
     Default: us-west-2
     Description: The region to deploy the lambda function
 Resources:
+  SlackbotGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: The rest api gateway that will trigger the lambda function
+      Name: !Sub ${Env}-${ApiGatewayName}-${Region}
+  SlackbotGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: SlackbotGatewayRootMethod
+    Description: The deployment of the api gateway
+    Properties:
+      RestApiId: !Ref SlackbotGateway
+      StageName: !Sub ${Env}
+  SlackbotGatewayRootMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: !Sub ${ApiGatewayRootMethod}
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations 
+          - LambdaArn: !GetAtt SlackbotFunction.Arn
+      ResourceId: !GetAtt SlackbotGateway.RootResourceId
+      RestApiId: !Ref SlackbotGateway
   SlackbotFunction:
     Type: AWS::Lambda::Function
     Properties: 
@@ -48,7 +81,7 @@ Resources:
                 lambda.amazonaws.com
             Action: 
               - 'sts:AssumeRole'
-      Description: The IAM role that will be used to execute the lambda function
+      Description: The iam role that will be used to execute the lambda function
       ManagedPolicyArns: 
         - !Ref SlackbotIamRolePolicy
       RoleName: !Sub ${Env}-${LambdaRoleName}-${Region}
@@ -68,3 +101,10 @@ Resources:
                 - 'logs:CreateLogStream'
                 - 'logs:PutLogEvents'
               Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaFuncName}:*
+  SlackbotPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt SlackbotFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${Region}:${AWS::AccountId}:${SlackbotGateway}/${Env}/${ApiGatewayRootMethod}/
