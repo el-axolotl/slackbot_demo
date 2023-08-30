@@ -9,5 +9,5 @@ Consider adding a CI/CD pipeline that will deploy code updates to your infrastru
 ## Acceptance Criteria:
 A slackbot that responds to input from a human or some other event. Deployed to AWS using Cloudformation.
 
-## Resources:
-Rest API Gateway Trigger: https://gist.github.com/magnetikonline/c314952045eee8e8375b82bc7ec68e88
+## Learning Resources:
+Rest API Gateway Trigger Example: https://gist.github.com/magnetikonline/c314952045eee8e8375b82bc7ec68e88

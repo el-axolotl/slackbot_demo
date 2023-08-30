@@ -9,6 +9,10 @@ Parameters:
     Type: String
     Default: POST
     Description: The root method for the api gateway (Example - POST - GET)
+  App:
+    Type: String
+    Default: Slackbot
+    Description: The name of the application
   Env:
     Type: String
     Default: dev
@@ -35,6 +39,9 @@ Resources:
     Properties:
       Description: The rest api gateway that will trigger the lambda function
       Name: !Sub ${Env}-${ApiGatewayName}-${Region}
+      Tags:
+        - Key: "App"
+          Value: !Sub ${App}
   SlackbotGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: SlackbotGatewayRootMethod
@@ -69,8 +76,20 @@ Resources:
       PackageType: Zip
       Role: !GetAtt SlackbotFunctionRole.Arn
       Runtime: python3.10
+      Tags:
+        - Key: "App"
+          Value: !Sub ${App}      
+  SlackbotFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Env}-${LambdaFuncName}-${Region}
+      RetentionInDays: 30
+      Tags:
+        - Key: "App"
+          Value: !Sub ${App}      
   SlackbotFunctionRole:
     Type: AWS::IAM::Role
+    DependsOn: SlackbotFunctionRolePolicy
     Properties: 
       AssumeRolePolicyDocument: 
         Version: 2012-10-17
@@ -83,9 +102,12 @@ Resources:
               - 'sts:AssumeRole'
       Description: The iam role that will be used to execute the lambda function
       ManagedPolicyArns: 
-        - !Ref SlackbotIamRolePolicy
+        - !Ref SlackbotFunctionRolePolicy
       RoleName: !Sub ${Env}-${LambdaRoleName}-${Region}
-  SlackbotIamRolePolicy:
+      Tags:
+        - Key: "App"
+          Value: !Sub ${App}
+  SlackbotFunctionRolePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       ManagedPolicyName: !Sub ${Env}-${LambdaPolicyName}-${Region}
@@ -100,8 +122,8 @@ Resources:
               Action:
                 - 'logs:CreateLogStream'
                 - 'logs:PutLogEvents'
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaFuncName}:*
-  SlackbotPermissions:
+              Resource: !GetAtt SlackbotFunctionLogs.Arn
+  SlackbotFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
