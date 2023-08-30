@@ -69,9 +69,15 @@ Resources:
         - x86_64
       Code: 
         ZipFile: |
-          print("Hello world!")
+          import json
+
+          def lambda_handler(event, context):
+            print("Hello world!")
+            return {
+              'statusCode': 200
+            }
       FunctionName: !Sub ${Env}-${LambdaFuncName}-${Region}
-      Handler: !Sub ${LambdaFuncName}.lambda_handler
+      Handler: !Sub index.lambda_handler
       MemorySize: 128
       PackageType: Zip
       Role: !GetAtt SlackbotFunctionRole.Arn
