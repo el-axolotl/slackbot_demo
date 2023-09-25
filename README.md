@@ -1,4 +1,4 @@
-# divvy_interview_project_slackbot_demo
+# slackbot_demo
 
 ## Objective:
 Build a slack bot using Python & its open source libraries. For example, you might choose to use the Bolt Library. Deploy this slackbot to AWS using Cloudformation, either to the EC2 free tier (with or without a docker container), Lightsail, or to AWS lambda with an API gateway, or any other method you’d choose.
