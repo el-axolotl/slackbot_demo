@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: A template that stands up a slackbot lambda function.
 Parameters:
+  AllowedIpAddressRange:
+    Type: String
+    Description: The CIDR range to restrict access to for the API gateway
   ApiGatewayName:
     Type: String
     Default: slackbot-gateway
@@ -25,10 +28,6 @@ Parameters:
     Type: String
     Default: slackbot-func-role
     Description: The name of the lambda role
-  Region:
-    Type: String
-    Default: us-west-2
-    Description: The region to deploy the lambda function
 Resources:
   SlackbotGateway:
     Type: AWS::ApiGateway::RestApi
@@ -37,7 +36,24 @@ Resources:
       EndpointConfiguration:
         Types:
           - REGIONAL
-      Name: !Sub ${Env}-${ApiGatewayName}-${Region}
+      Name: !Sub ${Env}-${ApiGatewayName}-${AWS::Region}
+      Policy:
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "execute-api:Invoke",
+              "Resource": !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*",
+              "Condition": {
+                "IpAddress": {
+                  "aws:SourceIp": !Sub "${AllowedIpAddressRange}"
+                }
+              }
+            }
+          ]
+        }
       Tags:
         - Key: "App"
           Value: !Sub ${App}
@@ -63,7 +79,7 @@ Resources:
         IntegrationHttpMethod: POST
         Type: AWS_PROXY
         Uri: !Sub
-          - arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations 
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations 
           - LambdaArn: !GetAtt SlackbotFunction.Arn
       ResourceId: !GetAtt SlackbotGatewayResource.ResourceId
       RestApiId: !Ref SlackbotGateway
@@ -81,7 +97,7 @@ Resources:
               'statusCode': 200,
               'body': json.dumps('Hello world from Lambda!')
             }
-      FunctionName: !Sub ${Env}-${LambdaFuncName}-${Region}
+      FunctionName: !Sub ${Env}-${LambdaFuncName}-${AWS::Region}
       Handler: !Sub index.lambda_handler
       MemorySize: 128
       PackageType: Zip
@@ -93,7 +109,7 @@ Resources:
   SlackbotFunctionLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${Env}-${LambdaFuncName}-${Region}
+      LogGroupName: !Sub /aws/lambda/${Env}-${LambdaFuncName}-${AWS::Region}
       RetentionInDays: 30
       Tags:
         - Key: "App"
@@ -101,7 +117,8 @@ Resources:
   SlackbotFunctionRole:
     Type: AWS::IAM::Role
     DependsOn: SlackbotFunctionRolePolicy
-    Properties: 
+    Properties:
+      Description: The iam role that will be used to execute the lambda function
       AssumeRolePolicyDocument: 
         Version: 2012-10-17
         Statement:
@@ -111,17 +128,17 @@ Resources:
                 lambda.amazonaws.com
             Action: 
               - 'sts:AssumeRole'
-      Description: The iam role that will be used to execute the lambda function
       ManagedPolicyArns: 
         - !Ref SlackbotFunctionRolePolicy
-      RoleName: !Sub ${Env}-${LambdaRoleName}-${Region}
+      RoleName: !Sub ${Env}-${LambdaRoleName}-${AWS::Region}
       Tags:
         - Key: "App"
           Value: !Sub ${App}
   SlackbotFunctionRolePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      ManagedPolicyName: !Sub ${Env}-${LambdaPolicyName}-${Region}
+      Description: The policy for the iam role that will be used to execute the lambda function
+      ManagedPolicyName: !Sub ${Env}-${LambdaPolicyName}-${AWS::Region}
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -140,4 +157,4 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt SlackbotFunction.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${Region}:${AWS::AccountId}:${SlackbotGateway}/*/*
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SlackbotGateway}/*/*
