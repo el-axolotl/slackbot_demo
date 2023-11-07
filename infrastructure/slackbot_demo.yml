@@ -79,14 +79,13 @@ Resources:
         Type: AWS_PROXY
         Uri: 
           Fn::Join:
-            - ''
-            - - 'arn:'
+            - ':'
+            - - 'arn'
               - !Ref AWS::Partition
-              - ':apigateway:'
+              - 'apigateway'
               - !Ref AWS::Region
-              - ':lambda:path/2015-03-31/functions/'
-              - !GetAtt SlackbotFunction.Arn
-              - '/invocations'
+              - 'lambda'
+              - !Sub path/2015-03-31/functions/${SlackbotFunction.Arn}/invocations
       ResourceId: !GetAtt SlackbotGatewayResource.ResourceId
       RestApiId: !Ref SlackbotGateway
   SlackbotFunction:
@@ -163,7 +162,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt SlackbotFunction.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: #!Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SlackbotGateway}/*/*
+      SourceArn: 
         Fn::Join:
           - ':'
           - - 'arn'
