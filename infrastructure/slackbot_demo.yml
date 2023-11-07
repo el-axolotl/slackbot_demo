@@ -115,6 +115,7 @@ Resources:
   SlackbotFunctionLogs:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${Env}-${LambdaFuncName}-${AWS::Region}
       Tags:
@@ -169,7 +170,6 @@ Resources:
             - !Ref AWS::Partition
             - ':execute-api:'
             - !Ref AWS::Region
-            - ':'
             - !Ref AWS::AccountId
             - ':'
             - !Ref SlackbotGateway
