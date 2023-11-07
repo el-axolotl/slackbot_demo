@@ -109,7 +109,6 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${Env}-${LambdaFuncName}-${AWS::Region}
-      RetentionInDays: 30
       Tags:
         - Key: "App"
           Value: !Sub ${App}      
@@ -143,7 +142,7 @@ Resources:
             - Effect: Allow
               Action:
                 - 'logs:CreateLogGroup'
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+              Resource: !GetAtt SlackbotFunctionLogs.Arn
             - Effect: Allow
               Action:
                 - 'logs:CreateLogStream'
