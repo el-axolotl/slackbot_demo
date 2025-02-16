@@ -30,3 +30,13 @@ Rest API Gateway Trigger Example: https://gist.github.com/magnetikonline/c314952
     ```
     aws lambda invoke --region=us-west-2 --function-name=$(terraform output -raw function_name) response.json
     ```
+
+## Cleanup Resources
+- Plan Destroy
+    ```
+    terraform plan -destroy -var-file="_$(terraform workspace show).tfvars"
+    ```
+- Terraform Destroy
+    ```
+    terraform destroy -var-file="_$(terraform workspace show).tfvars"
+    ```
