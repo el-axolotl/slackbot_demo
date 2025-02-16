@@ -14,7 +14,8 @@ The link below will teach you how to set up the Slack application and how to int
 - https://medium.com/glasswall-engineering/how-to-create-a-slack-bot-using-aws-lambda-in-1-hour-1dbc1b6f021c
 
 ## Learning Resources:
-Rest API Gateway Trigger Example: https://gist.github.com/magnetikonline/c314952045eee8e8375b82bc7ec68e88
+- Rest API Gateway Trigger Example: https://gist.github.com/magnetikonline/c314952045eee8e8375b82bc7ec68e88
+- Terraform Lambda and API Gateway: https://developer.hashicorp.com/terraform/tutorials/aws/lambda-api-gateway
 
 ## Testing
 - Stand up infrastructure by running command in /infra directory.
@@ -24,7 +25,7 @@ Rest API Gateway Trigger Example: https://gist.github.com/magnetikonline/c314952
     ```
 - Test API Gateway
     ```
-    curl "$(terraform output -raw base_url)/hello"
+    curl "$(terraform output -raw base_url)/slackbot_demo"
     ```
 - Test lambda function
     ```
