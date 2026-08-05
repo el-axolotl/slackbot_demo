@@ -4,6 +4,7 @@ import hmac
 import json
 import os
 import time
+
 import boto3
 
 secrets_client = boto3.client("secretsmanager")
@@ -48,9 +49,8 @@ def main(event, context):
             'body': json.dumps('Invalid request signature.')
         }
 
-    print("Hello world!")
-
     return {
         'statusCode': 200,
-        'body': ""
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps({'response_type': 'in_channel', 'text': 'Hello world!'})
     }
