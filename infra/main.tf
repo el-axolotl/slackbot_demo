@@ -162,6 +162,8 @@ resource "aws_lambda_function" "lambda_function" {
   s3_key           = aws_s3_object.lambda_code.key
   source_code_hash = data.archive_file.code.output_base64sha256
 
+  reserved_concurrent_executions = var.lambda_reserved_concurrent_executions
+
   environment {
     variables = {
       SLACK_SIGNING_SECRET_ARN = aws_secretsmanager_secret.slack_signing_secret.arn
@@ -197,6 +199,11 @@ resource "aws_apigatewayv2_stage" "lambda_stage" {
   api_id      = aws_apigatewayv2_api.api_gateway.id
   auto_deploy = true
   name        = var.env
+
+  default_route_settings {
+    throttling_burst_limit = var.api_throttling_burst_limit
+    throttling_rate_limit  = var.api_throttling_rate_limit
+  }
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.lambda_cloudwatch_logs.arn

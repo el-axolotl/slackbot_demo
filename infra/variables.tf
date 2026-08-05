@@ -1,3 +1,15 @@
+variable "api_throttling_burst_limit" {
+  description = "The maximum burst of concurrent requests the API Gateway stage will accept before throttling."
+  type        = number
+  default     = 1
+}
+
+variable "api_throttling_rate_limit" {
+  description = "The steady-state number of requests per second the API Gateway stage will accept before throttling."
+  type        = number
+  default     = 1
+}
+
 variable "bucket_force_destroy" {
   description = "Whether to force destroy the S3 bucket even if it contains objects."
   type        = bool
@@ -12,6 +24,12 @@ variable "cloudwatch_log_retention_in_days" {
 variable "env" {
   description = "The environment to deploy all resources."
   type        = string
+}
+
+variable "lambda_reserved_concurrent_executions" {
+  description = "The maximum number of concurrent executions reserved for the lambda function."
+  type        = number
+  default     = 1
 }
 
 variable "lambda_runtime" {
