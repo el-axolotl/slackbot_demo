@@ -1,2 +1,6 @@
 # Terraform
 *terraform*
+*.tfvars
+
+# Zip files
+*.zip
