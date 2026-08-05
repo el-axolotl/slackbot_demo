@@ -1,3 +1,8 @@
+variable "bucket_force_destroy" {
+  description = "Whether to force destroy the S3 bucket even if it contains objects."
+  type        = bool
+}
+
 variable "cloudwatch_log_retention_in_days" {
   description = "The number of days to retain cloudwatch logs."
   type        = string
@@ -7,6 +12,12 @@ variable "cloudwatch_log_retention_in_days" {
 variable "env" {
   description = "The environment to deploy all resources."
   type        = string
+}
+
+variable "lambda_runtime" {
+  description = "The runtime version to use for the lambda function."
+  type        = string
+  default     = "python3.12"
 }
 
 variable "name" {

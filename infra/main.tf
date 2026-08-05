@@ -19,7 +19,10 @@ data "aws_iam_policy_document" "lambda_logging" {
   statement {
     effect = "Allow"
 
-    resources = ["arn:aws:logs:*"] #TODO: Provide cloudwatch arn
+    resources = [
+      aws_cloudwatch_log_group.lambda_cloudwatch_logs.arn,
+      "${aws_cloudwatch_log_group.lambda_cloudwatch_logs.arn}:*"
+    ]
 
     actions = [
       "logs:CreateLogGroup",
@@ -49,11 +52,6 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_execution_policy_attachment" {
-  role       = aws_iam_role.lambda_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
 # ---------------------------------------------------------------------------
 # IAM - end
 # ---------------------------------------------------------------------------
@@ -72,21 +70,42 @@ resource "aws_cloudwatch_log_group" "lambda_cloudwatch_logs" {
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# S3 - start
+# ---------------------------------------------------------------------------
+
+resource "aws_s3_bucket" "bucket" {
+  bucket        = "${var.name}-${var.env}-${var.region}-bucket"
+  force_destroy = var.bucket_force_destroy
+}
+
+resource "aws_s3_object" "lambda_code" {
+  bucket = aws_s3_bucket.bucket.id
+  key    = "source_code/${var.name}/slackbot.zip"
+  source = data.archive_file.code.output_path
+  etag   = data.archive_file.code.output_md5
+}
+
+# ---------------------------------------------------------------------------
+# S3 - end
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # Lambda - start
 # ---------------------------------------------------------------------------
 
 data "archive_file" "code" {
-  output_path = "${path.module}/../src/lambda_function_payload.zip"
-  source_file = "${path.module}/../src/main.py"
+  output_path = "${path.module}/../src/slackbot.zip"
+  source_file = "${path.module}/../src/slackbot.py"
   type        = "zip"
 }
 
 resource "aws_lambda_function" "lambda_function" {
-  filename         = "${path.module}/../src/lambda_function_payload.zip"
-  function_name    = "${var.name}-${var.env}-${var.region}-lambda_function"
-  handler          = "main.lambda_handler"
+  function_name    = "${var.name}-${var.env}-${var.region}-lambda"
+  handler          = "slackbot.main"
   role             = aws_iam_role.lambda_role.arn
-  runtime          = "python3.12"
+  runtime          = var.lambda_runtime
+  s3_bucket        = aws_s3_object.lambda_code.bucket
+  s3_key           = aws_s3_object.lambda_code.key
   source_code_hash = data.archive_file.code.output_base64sha256
 
   depends_on = [
@@ -106,7 +125,7 @@ resource "aws_lambda_function" "lambda_function" {
 resource "aws_apigatewayv2_api" "api_gateway" {
   description = "The API Gateway used to execute the lambda function."
 
-  name          = "${var.name}-${var.env}-${var.region}-api_gateway"
+  name          = "${var.name}-${var.env}-${var.region}-gateway"
   protocol_type = "HTTP"
 }
 
