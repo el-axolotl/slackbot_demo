@@ -1,4 +1,9 @@
 terraform {
+  backend "s3" {
+    bucket = "tfstate-axolotl-prod"
+    key    = "slackbot_demo/${terraform.workspace}/terraform.tfstate"
+    region = "us-west-2"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -12,9 +17,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      app         = "slackbot_demo",
-      environment = var.env
+      app  = "slackbot_demo",
+      env  = var.env,
+      repo = var.repo
     }
   }
-
 }
