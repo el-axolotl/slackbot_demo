@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket = "tfstate-axolotl-prod"
-    key    = "slackbot_demo/${terraform.workspace}/terraform.tfstate"
+    key    = "slackbot_demo/terraform.tfstate"
     region = "us-west-2"
   }
   required_providers {

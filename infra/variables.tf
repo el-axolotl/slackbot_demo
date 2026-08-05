@@ -26,7 +26,3 @@ variable "repo" {
   type        = string
   default     = "slackbot_demo"
 }
-
-variable "tf_state_bucket_name" {
-  description = "The name of the bucket to store the terraform state file."
-}
