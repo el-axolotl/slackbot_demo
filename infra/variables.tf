@@ -37,3 +37,15 @@ variable "repo" {
   type        = string
   default     = "slackbot_demo"
 }
+
+variable "slack_bot_token" {
+  description = "The bot token used to authenticate calls to the Slack API."
+  type        = string
+  sensitive   = true
+}
+
+variable "slack_signing_secret" {
+  description = "The signing secret used to verify requests are coming from Slack."
+  type        = string
+  sensitive   = true
+}

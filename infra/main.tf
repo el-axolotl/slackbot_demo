@@ -52,6 +52,32 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
+data "aws_iam_policy_document" "lambda_secrets" {
+  statement {
+    effect = "Allow"
+
+    resources = [
+      aws_secretsmanager_secret.slack_signing_secret.arn,
+      aws_secretsmanager_secret.slack_bot_token.arn
+    ]
+
+    actions = ["secretsmanager:GetSecretValue"]
+  }
+}
+
+resource "aws_iam_policy" "lambda_secrets_policy" {
+  description = "The iam policy that allows the lambda function to read Slack secrets from Secrets Manager."
+
+  name   = "${var.name}-${var.env}-${var.region}-secrets_policy"
+  path   = "/"
+  policy = data.aws_iam_policy_document.lambda_secrets.json
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_secrets_policy_attachment" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_secrets_policy.arn
+}
+
 # ---------------------------------------------------------------------------
 # IAM - end
 # ---------------------------------------------------------------------------
@@ -90,6 +116,34 @@ resource "aws_s3_object" "lambda_code" {
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# Secrets Manager - start
+# ---------------------------------------------------------------------------
+
+resource "aws_secretsmanager_secret" "slack_signing_secret" {
+  name                    = "${var.name}-${var.env}-${var.region}-slack_signing_secret"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "slack_signing_secret" {
+  secret_id     = aws_secretsmanager_secret.slack_signing_secret.id
+  secret_string = var.slack_signing_secret
+}
+
+resource "aws_secretsmanager_secret" "slack_bot_token" {
+  name                    = "${var.name}-${var.env}-${var.region}-slack_bot_token"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "slack_bot_token" {
+  secret_id     = aws_secretsmanager_secret.slack_bot_token.id
+  secret_string = var.slack_bot_token
+}
+
+# ---------------------------------------------------------------------------
+# Secrets Manager - end
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # Lambda - start
 # ---------------------------------------------------------------------------
 
@@ -108,8 +162,16 @@ resource "aws_lambda_function" "lambda_function" {
   s3_key           = aws_s3_object.lambda_code.key
   source_code_hash = data.archive_file.code.output_base64sha256
 
+  environment {
+    variables = {
+      SLACK_SIGNING_SECRET_ARN = aws_secretsmanager_secret.slack_signing_secret.arn
+      SLACK_BOT_TOKEN_ARN      = aws_secretsmanager_secret.slack_bot_token.arn
+    }
+  }
+
   depends_on = [
     aws_iam_role_policy_attachment.lambda_policy_attachment,
+    aws_iam_role_policy_attachment.lambda_secrets_policy_attachment,
     aws_cloudwatch_log_group.lambda_cloudwatch_logs
   ]
 }
@@ -167,7 +229,7 @@ resource "aws_apigatewayv2_integration" "api_gateway_integration" {
 
 resource "aws_apigatewayv2_route" "api_gateway_route" {
   api_id    = aws_apigatewayv2_api.api_gateway.id
-  route_key = "GET /${var.name}"
+  route_key = "POST /${var.name}"
   target    = "integrations/${aws_apigatewayv2_integration.api_gateway_integration.id}"
 }
 
