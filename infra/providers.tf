@@ -1,8 +1,9 @@
 terraform {
   backend "s3" {
-    bucket = "tfstate-axolotl-prod"
-    key    = "slackbot_demo/terraform.tfstate"
-    region = "us-west-2"
+    bucket  = "tfstate-axolotl-prod"
+    key     = "slackbot_demo/terraform.tfstate"
+    region  = "us-west-2"
+    encrypt = true
   }
   required_providers {
     aws = {

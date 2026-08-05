@@ -57,8 +57,7 @@ data "aws_iam_policy_document" "lambda_secrets" {
     effect = "Allow"
 
     resources = [
-      aws_secretsmanager_secret.slack_signing_secret.arn,
-      aws_secretsmanager_secret.slack_bot_token.arn
+      aws_secretsmanager_secret.slack_signing_secret.arn
     ]
 
     actions = ["secretsmanager:GetSecretValue"]
@@ -129,16 +128,6 @@ resource "aws_secretsmanager_secret_version" "slack_signing_secret" {
   secret_string = var.slack_signing_secret
 }
 
-resource "aws_secretsmanager_secret" "slack_bot_token" {
-  name                    = "${var.name}-${var.env}-${var.region}-slack_bot_token"
-  recovery_window_in_days = 0
-}
-
-resource "aws_secretsmanager_secret_version" "slack_bot_token" {
-  secret_id     = aws_secretsmanager_secret.slack_bot_token.id
-  secret_string = var.slack_bot_token
-}
-
 # ---------------------------------------------------------------------------
 # Secrets Manager - end
 # ---------------------------------------------------------------------------
@@ -167,7 +156,6 @@ resource "aws_lambda_function" "lambda_function" {
   environment {
     variables = {
       SLACK_SIGNING_SECRET_ARN = aws_secretsmanager_secret.slack_signing_secret.arn
-      SLACK_BOT_TOKEN_ARN      = aws_secretsmanager_secret.slack_bot_token.arn
     }
   }
 

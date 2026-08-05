@@ -21,7 +21,12 @@ def is_valid_slack_request(event, signing_secret):
     if not timestamp or not slack_signature:
         return False
 
-    if abs(time.time() - int(timestamp)) > 60 * 5:
+    try:
+        timestamp = int(timestamp)
+    except ValueError:
+        return False
+
+    if abs(time.time() - timestamp) > 60 * 5:
         return False
 
     body = event.get('body', '')
@@ -36,7 +41,6 @@ def is_valid_slack_request(event, signing_secret):
 
 def main(event, context):
     slack_signing_secret = get_secret(os.environ["SLACK_SIGNING_SECRET_ARN"])
-    slack_bot_token = get_secret(os.environ["SLACK_BOT_TOKEN_ARN"])
 
     if not is_valid_slack_request(event, slack_signing_secret):
         return {
