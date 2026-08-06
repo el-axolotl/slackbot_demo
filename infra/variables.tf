@@ -1,3 +1,15 @@
+variable "api_throttling_burst_limit" {
+  description = "The maximum burst of concurrent requests the API Gateway stage will accept before throttling."
+  type        = number
+  default     = 1
+}
+
+variable "api_throttling_rate_limit" {
+  description = "The steady-state number of requests per second the API Gateway stage will accept before throttling."
+  type        = number
+  default     = 1
+}
+
 variable "bucket_force_destroy" {
   description = "Whether to force destroy the S3 bucket even if it contains objects."
   type        = bool
@@ -23,7 +35,7 @@ variable "lambda_runtime" {
 variable "name" {
   description = "The name of the app."
   type        = string
-  default     = "slackbot_demo"
+  default     = "slackbot-demo"
 }
 
 variable "region" {
@@ -36,4 +48,10 @@ variable "repo" {
   description = "The name of the repository."
   type        = string
   default     = "slackbot_demo"
+}
+
+variable "slack_signing_secret" {
+  description = "The signing secret used to verify requests are coming from Slack."
+  type        = string
+  sensitive   = true
 }
