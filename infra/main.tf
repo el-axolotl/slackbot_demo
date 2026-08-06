@@ -57,7 +57,7 @@ data "aws_iam_policy_document" "lambda_secrets" {
     effect = "Allow"
 
     resources = [
-      aws_secretsmanager_secret.slack_signing_secret.arn
+      aws_secretsmanager_secret.secrets.arn
     ]
 
     actions = ["secretsmanager:GetSecretValue"]
@@ -105,7 +105,7 @@ resource "aws_s3_bucket" "bucket" {
 
 resource "aws_s3_object" "lambda_code" {
   bucket = aws_s3_bucket.bucket.id
-  key    = "source_code/${var.name}/slackbot.zip"
+  key    = "source_code/${var.name}/secrets_rotation.zip"
   source = data.archive_file.code.output_path
   etag   = data.archive_file.code.output_md5
 }
@@ -118,13 +118,13 @@ resource "aws_s3_object" "lambda_code" {
 # Secrets Manager - start
 # ---------------------------------------------------------------------------
 
-resource "aws_secretsmanager_secret" "slack_signing_secret" {
-  name                    = "${var.name}-${var.env}-${var.region}-slack_signing_secret"
+resource "aws_secretsmanager_secret" "secrets" {
+  name                    = "${var.name}-${var.env}-${var.region}-secrets"
   recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "slack_signing_secret" {
-  secret_id     = aws_secretsmanager_secret.slack_signing_secret.id
+  secret_id     = aws_secretsmanager_secret.secrets.id
   secret_string = var.slack_signing_secret
 }
 
@@ -137,14 +137,14 @@ resource "aws_secretsmanager_secret_version" "slack_signing_secret" {
 # ---------------------------------------------------------------------------
 
 data "archive_file" "code" {
-  output_path = "${path.module}/../src/slackbot.zip"
-  source_file = "${path.module}/../src/slackbot.py"
+  output_path = "${path.module}/../src/secrets_rotation.zip"
+  source_file = "${path.module}/../src/secrets_rotation.py"
   type        = "zip"
 }
 
-resource "aws_lambda_function" "lambda_function" {
+resource "aws_lambda_function" "secrets_rotation_function" {
   function_name    = "${var.name}-${var.env}-${var.region}-lambda"
-  handler          = "slackbot.main"
+  handler          = "secrets_rotation.main"
   role             = aws_iam_role.lambda_role.arn
   runtime          = var.lambda_runtime
   s3_bucket        = aws_s3_object.lambda_code.bucket
@@ -153,7 +153,7 @@ resource "aws_lambda_function" "lambda_function" {
 
   environment {
     variables = {
-      SLACK_SIGNING_SECRET_ARN = aws_secretsmanager_secret.slack_signing_secret.arn
+      SLACK_SIGNING_SECRET_ARN = aws_secretsmanager_secret.secrets.arn
     }
   }
 
@@ -220,7 +220,7 @@ resource "aws_apigatewayv2_integration" "api_gateway_integration" {
   description = "Ties the API Gateway to the lambda function."
 
   api_id             = aws_apigatewayv2_api.api_gateway.id
-  integration_uri    = aws_lambda_function.lambda_function.invoke_arn
+  integration_uri    = aws_lambda_function.secrets_rotation_function.invoke_arn
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
 }
@@ -234,7 +234,7 @@ resource "aws_apigatewayv2_route" "api_gateway_route" {
 resource "aws_lambda_permission" "lambda_permission" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.lambda_function.function_name
+  function_name = aws_lambda_function.secrets_rotation_function.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.api_gateway.execution_arn}/*/*"
 }
