@@ -17,6 +17,15 @@ The link below will teach you how to set up the Slack application and how to int
 - Rest API Gateway Trigger Example: https://gist.github.com/magnetikonline/c314952045eee8e8375b82bc7ec68e88
 - Terraform Lambda and API Gateway: https://developer.hashicorp.com/terraform/tutorials/aws/lambda-api-gateway
 
+## MFA
+    ```
+    Remove-Item "$env:USERPROFILE\.aws\cli\cache\*" -Force
+    ```
+
+    ```
+    aws configure export-credentials --profile developer --format powershell | Invoke-Expression
+    ```
+
 ## Testing
 - Stand up infrastructure by running command in /infra directory.
     ```

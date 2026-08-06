@@ -15,7 +15,7 @@ def get_secret(secret_arn):
 
 
 def is_valid_slack_request(event, signing_secret):
-    headers = event.get('headers', {})
+    headers = {k.lower(): v for k, v in event.get('headers', {}).items()}
     timestamp = headers.get('x-slack-request-timestamp')
     slack_signature = headers.get('x-slack-signature')
 
@@ -27,7 +27,8 @@ def is_valid_slack_request(event, signing_secret):
     except ValueError:
         return False
 
-    if abs(time.time() - timestamp) > 60 * 5:
+    age = abs(time.time() - timestamp)
+    if age > 60 * 5:
         return False
 
     body = event.get('body', '')

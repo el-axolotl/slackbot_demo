@@ -26,12 +26,6 @@ variable "env" {
   type        = string
 }
 
-variable "lambda_reserved_concurrent_executions" {
-  description = "The maximum number of concurrent executions reserved for the lambda function."
-  type        = number
-  default     = 1
-}
-
 variable "lambda_runtime" {
   description = "The runtime version to use for the lambda function."
   type        = string
@@ -41,7 +35,7 @@ variable "lambda_runtime" {
 variable "name" {
   description = "The name of the app."
   type        = string
-  default     = "slackbot_demo"
+  default     = "slackbot-demo"
 }
 
 variable "region" {

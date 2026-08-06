@@ -21,6 +21,7 @@ provider "aws" {
       app  = "slackbot_demo",
       env  = var.env,
       repo = var.repo
+      purpose = "home-lab"
     }
   }
 }
